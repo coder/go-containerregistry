@@ -87,6 +87,8 @@ func (bt *bearerTransport) RoundTrip(in *http.Request) (*http.Response, error) {
 
 	// If we hit a WWW-Authenticate challenge, it might be due to expired tokens or insufficient scope.
 	if challenges := authchallenge.ResponseChallenges(res); len(challenges) != 0 {
+		// close out old response, since we will not return it.
+		res.Body.Close()
 		for _, wac := range challenges {
 			// TODO(jonjohnsonjr): Should we also update "realm" or "service"?
 			if scope, ok := wac.Parameters["scope"]; ok {
