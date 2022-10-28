@@ -358,7 +358,7 @@ func (f *fetcher) headManifest(ref name.Reference, acceptable []types.MediaType)
 	}, nil
 }
 
-func (f *fetcher) fetchBlob(ctx context.Context, size int64, h v1.Hash) (io.ReadCloser, error) {
+func (f *fetcher) fetchBlob(ctx context.Context, size int64, h v1.Hash) (rc io.ReadCloser, retErr error) {
 	u := f.url("blobs", h.String())
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
@@ -369,9 +369,13 @@ func (f *fetcher) fetchBlob(ctx context.Context, size int64, h v1.Hash) (io.Read
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if resp != nil && retErr != nil {
+			resp.Body.Close()
+		}
+	}()
 
 	if err := transport.CheckError(resp, http.StatusOK); err != nil {
-		resp.Body.Close()
 		return nil, err
 	}
 
